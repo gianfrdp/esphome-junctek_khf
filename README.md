@@ -72,13 +72,13 @@ sensor:
       id: ${device_id}_current
     battery_level:
       name: "${name} SoC"
-      #id: ${device_id}_battery_level
+      id: ${device_id}_battery_level
     power:
       name: "${name} Power"
       id: ${device_id}_power
     amp_hour_remain:
       name: "${name} Remaining Capacity"
-      #id: ${device_id}_remaining_capacity
+      id: ${device_id}_remaining_capacity
     battery_capacity:
       name: "${name} Total Capacity"
       id: ${device_id}_battery_capacity
