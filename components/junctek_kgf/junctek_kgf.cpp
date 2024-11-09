@@ -20,7 +20,7 @@ esphome::optional<int> try_getval(const char*& cursor)
   }
   if (*end != ',' && *end != '.')
   {
-    ESP_LOGE("JunkTekKGF", "Error no coma %s", cursor);
+    ESP_LOGE("JunkTekKHF", "Error no coma %s", cursor);
     return nullopt;
   }
   cursor = end + 1; // Skip coma
@@ -58,7 +58,7 @@ void JuncTekKGF::dump_config()
 
 void JuncTekKGF::handle_settings(const char* buffer)
 {
-  ESP_LOGD("JunkTekKGF", "Settings %s", buffer);
+  ESP_LOGD("JunkTekKHF", "Settings %s", buffer);
   const char* cursor = buffer;
   const int address = getval(cursor);
 
@@ -86,6 +86,9 @@ void JuncTekKGF::handle_settings(const char* buffer)
   const int relayNormallyOpen = getval(cursor);
   const int currentratio = getval(cursor);
 
+  if (battery_capacity_sensor_)
+    this->battery_capacity_sensor_->publish_state(batteryAmpHourCapacity);
+
   // Save the capacity for calculating the %
   this->battery_capacity_ = batteryAmpHourCapacity;
   this->last_settings_ = esphome::millis();
@@ -94,7 +97,7 @@ void JuncTekKGF::handle_settings(const char* buffer)
 
 void JuncTekKGF::handle_status(const char* buffer)
 {
-  ESP_LOGV("JunkTekKGF", "Status %s", buffer);
+  ESP_LOGV("JunkTekKHF", "Status %s", buffer);
   const char* cursor = buffer;
   const int address = getval(cursor); //0
   if (address != this->address_)
@@ -104,20 +107,31 @@ void JuncTekKGF::handle_status(const char* buffer)
   if (! verify_checksum(checksum, cursor))
     return;
 
-  const float voltage = getval(cursor) / 100.00; //2
-  const float amps = getval(cursor) / 100.00; //3
+  const float voltage = getval(cursor) / 100.00; //2 in V
+  const float amps = getval(cursor) / 100.00; //3 in A
 
-  const float ampHourRemaining = getval(cursor) / 1000.0; //4
-  const float ampHourTotalUsed = getval(cursor) / 1000.0; //5
-  const float ampHourTotalCharged = getval(cursor) / 1000.0; //6
+  const float ampHourRemaining = getval(cursor) / 1000.0; //4 in Ah
+  const float discharging_energy = getval(cursor) / 100000.0; //5 in kWh
+  const float charging_energy = getval(cursor) / 100000.0; //6 in kWh
 
-  const float runtimeSeconds = getval(cursor); //7
+  const int operational = getval(cursor); //7
   const float temperature = getval(cursor) - 100.0; //8
-  const float powerInWatts = getval(cursor) / 100.00; //9
+  const int function = getval(cursor); //9
   const int outputStatus = getval(cursor); //10
   const int direction = getval(cursor); //11
-  const int batteryLifeMinutes = getval(cursor); //12
-  const float batteryInternalOhms = getval(cursor) / 100000.000; //13, Ohms
+  const float batteryLifeMinutes = getval(cursor); //12 in minutes
+  const int time_adjustment = getval(cursor); //13
+  const int date = getval(cursor); //14
+  const int time = getval(cursor); //15
+  
+  const bool is_charging = direction == 1;
+
+  ESP_LOGD("JunctekKHF", "Received : %f %f %f %f %f %d %f %d %d %d %f %d %d %d", 
+         voltage, amps, ampHourRemaining, 
+         discharging_energy, charging_energy, operational, 
+         temperature, function, outputStatus, 
+         direction, batteryLifeMinutes, time_adjustment, 
+         date, time);
 
   if (voltage_sensor_)
     this->voltage_sensor_->publish_state(voltage);
@@ -132,7 +146,7 @@ void JuncTekKGF::handle_status(const char* buffer)
   }
 
   if (current_sensor_) {
-    float adjustedCurrent = direction == 0 ? amps : -amps;
+    float adjustedCurrent = is_charging ? amps : -amps;
     if (invert_current_)
       adjustedCurrent *= -1;
     current_sensor_->publish_state(adjustedCurrent);
@@ -141,17 +155,14 @@ void JuncTekKGF::handle_status(const char* buffer)
   if (current_direction_sensor_)
     this->current_direction_sensor_->publish_state(direction == 0);
 
-  if (battery_ohm_sensor_)
-    this->battery_ohm_sensor_->publish_state(batteryInternalOhms);
-
   if (amp_hour_remain_sensor_)
     this->amp_hour_remain_sensor_->publish_state(ampHourRemaining);
 
-  if (amp_hour_used_sensor_)
-  this->amp_hour_used_sensor_->publish_state(ampHourTotalUsed);
+  if (energy_discharged_sensor_)
+  this->energy_discharged_sensor_->publish_state(discharging_energy);
 
-  if (amp_hour_charged_sensor_)
-  this->amp_hour_charged_sensor_->publish_state(ampHourTotalCharged);
+  if (energy_charged_sensor_)
+  this->energy_charged_sensor_->publish_state(charging_energy);
 
   if (output_status_sensor_)
     this->output_status_sensor_->publish_state(outputStatus);
@@ -160,47 +171,42 @@ void JuncTekKGF::handle_status(const char* buffer)
     this->temperature_->publish_state(temperature);
 
   if (power_sensor_) {
-    float adjustedCurrent = direction == 0 ? amps : -amps;
+    float adjustedCurrent = is_charging ? amps : -amps;
     if (invert_current_)
       adjustedCurrent *= -1;
     float watts = voltage * adjustedCurrent;
     this->power_sensor_->publish_state(watts);
   }
 
-  if (battery_charged_energy_sensor_) {
-
-    float adjustedCurrent = direction == 0 ? amps : -amps;
+  if (charging_power_sensor_) {
+    float adjustedCurrent = amps;
     if (invert_current_)
       adjustedCurrent *= -1;
     float watts = voltage * adjustedCurrent;
 
     //we only care about amps that came into battery
     if(direction == 1)
-      this->battery_charged_energy_sensor_->publish_state(watts);
+      this->charging_power_sensor_->publish_state(watts); // should be power, not energy
     else
-      this->battery_charged_energy_sensor_->publish_state(0);
+      this->charging_power_sensor_->publish_state(0);
   }
 
+  if (discharging_power_sensor_) {
 
-  if (battery_discharged_energy_sensor_) {
-
-    float adjustedCurrent = direction == 0 ? amps : -amps;
+    float adjustedCurrent = amps;
     if (invert_current_)
       adjustedCurrent *= -1;
     float watts = voltage * adjustedCurrent;
 
     //we only care about amps that came from battery
     if(direction == 0)
-      this->battery_discharged_energy_sensor_->publish_state(watts);
+      this->discharging_power_sensor_->publish_state(watts); // should be power, not energy
     else
-      this->battery_discharged_energy_sensor_->publish_state(0);
+      this->discharging_power_sensor_->publish_state(0);
   }
 
-  if (battery_life_sensor_)
-      this->battery_life_sensor_->publish_state(batteryLifeMinutes);
-
-  if (runtime_sensor_)
-    this->runtime_sensor_->publish_state(runtimeSeconds);
+  if (remaining_time_sensor_)
+      this->remaining_time_sensor_->publish_state(batteryLifeMinutes);
 
   this->last_stats_ = esphome::millis();
 }
@@ -209,7 +215,7 @@ void JuncTekKGF::handle_line()
 {
   //A failure in parsing will return back to here with a non-zero value
   if (setjmp(parsing_failed)){
-    ESP_LOGE("JunkTekKGF", "parsing_failed");
+    ESP_LOGE("JunkTekKHF", "parsing_failed");
     return;
   }
 
@@ -224,7 +230,7 @@ void JuncTekKGF::handle_line()
   else if (strncmp(&buffer[2], "51=", 3) == 0)
     handle_settings(&buffer[5]);
   else
-    ESP_LOGD("JunkTekKGF", "buffer:", buffer);
+    ESP_LOGD("JunkTekKHF", "buffer: %s", buffer);
 
   return;
 }
@@ -260,7 +266,7 @@ bool JuncTekKGF::verify_checksum(int checksum, const char* buffer)
     total += *val;
   }
   const bool checksum_valid = (total % 255) + 1 == checksum;
-  ESP_LOGD("JunkTekKGF", "Recv checksum %d total %ld valid %d", checksum, total, checksum_valid);
+  ESP_LOGD("JunkTekKHF", "Recv checksum %d total %ld valid %d", checksum, total, checksum_valid);
   return checksum_valid;
 }
 

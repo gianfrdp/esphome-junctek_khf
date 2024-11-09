@@ -22,14 +22,15 @@ public:
   void set_battery_ohm_sensor(sensor::Sensor *battery_ohm_sensor) { battery_ohm_sensor_ = battery_ohm_sensor; }
   void set_battery_level_sensor(sensor::Sensor *battery_level_sensor) { battery_level_sensor_ = battery_level_sensor; }
   void set_amp_hour_remain_sensor(sensor::Sensor *amp_hour_remain_sensor) { amp_hour_remain_sensor_ = amp_hour_remain_sensor; }
-  void set_amp_hour_used_total_sensor(sensor::Sensor *amp_hour_used_sensor) { amp_hour_used_sensor_ = amp_hour_used_sensor; }
-  void set_amp_hour_charged_total_sensor(sensor::Sensor *amp_hour_charged_sensor) { amp_hour_charged_sensor_ = amp_hour_charged_sensor; }
-  void set_battery_charged_energy_sensor(sensor::Sensor *battery_charged_energy_sensor) { battery_charged_energy_sensor_ = battery_charged_energy_sensor; }
-  void set_battery_discharged_energy_sensor(sensor::Sensor *battery_discharged_energy_sensor) { battery_discharged_energy_sensor_ = battery_discharged_energy_sensor; }
+  void set_energy_discharged_sensor(sensor::Sensor *energy_discharged_sensor) { energy_discharged_sensor_ = energy_discharged_sensor; }
+  void set_energy_charged_sensor(sensor::Sensor *energy_charged_sensor) { energy_charged_sensor_ = energy_charged_sensor; }
+  void set_charging_power_sensor(sensor::Sensor *charging_power_sensor) { charging_power_sensor_ = charging_power_sensor; }
+  void set_discharging_power_sensor(sensor::Sensor *discharging_power_sensor) { discharging_power_sensor_ = discharging_power_sensor; }
   void set_output_status_sensor(sensor::Sensor *output_status_sensor) { output_status_sensor_ = output_status_sensor; }
   void set_power_sensor(sensor::Sensor *power_sensor) { power_sensor_ = power_sensor; }
-  void set_battery_life_sensor(sensor::Sensor *battery_life_sensor) { battery_life_sensor_ = battery_life_sensor; }
+  void set_remaining_time_sensor(sensor::Sensor *remaining_time_sensor) { remaining_time_sensor_ = remaining_time_sensor; }
   void set_runtime_sensor(sensor::Sensor *runtime_sensor) { runtime_sensor_ = runtime_sensor; }
+  void set_battery_capacity_sensor(sensor::Sensor *battery_capacity_sensor) { battery_capacity_sensor_ = battery_capacity_sensor; }
 
   void dump_config() override;
   void loop() override;
@@ -56,15 +57,16 @@ protected:
   sensor::Sensor* battery_level_sensor_{nullptr};
 
   sensor::Sensor* amp_hour_remain_sensor_{nullptr};
-  sensor::Sensor* amp_hour_used_sensor_{nullptr};
-  sensor::Sensor* amp_hour_charged_sensor_{nullptr};
-  sensor::Sensor* battery_charged_energy_sensor_{nullptr};
-  sensor::Sensor* battery_discharged_energy_sensor_{nullptr};
+  sensor::Sensor* energy_discharged_sensor_{nullptr};
+  sensor::Sensor* energy_charged_sensor_{nullptr};
+  sensor::Sensor* charging_power_sensor_{nullptr};
+  sensor::Sensor* discharging_power_sensor_{nullptr};
 
   sensor::Sensor* output_status_sensor_{nullptr};
   sensor::Sensor* power_sensor_{nullptr};
   sensor::Sensor* runtime_sensor_{nullptr};
-  sensor::Sensor* battery_life_sensor_{nullptr};
+  sensor::Sensor* remaining_time_sensor_{nullptr};
+  sensor::Sensor* battery_capacity_sensor_{nullptr};
 
   static constexpr int MAX_LINE_LEN = 120;
   std::array<char, MAX_LINE_LEN> line_buffer_;

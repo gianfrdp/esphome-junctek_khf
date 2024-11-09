@@ -1,3 +1,4 @@
 /.esphome/
 /*.yaml
 .idea/
+components/junctek_kgf/__pycache__/

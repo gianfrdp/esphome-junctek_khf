@@ -44,6 +44,7 @@ from esphome.const import (
     DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_DURATION,
     DEVICE_CLASS_BATTERY_CHARGING,
+    DEVICE_CLASS_ENERGY_STORAGE,
 )
 
 UNIT_AMPER_HOURS = 'Ah'
@@ -52,16 +53,16 @@ AUTO_LOAD = ["sensor"]
 
 # sensors
 CONF_CURRENT_DIRECTION="current_direction"
-CONF_BATTERY_OHM="battery_ohm"
-CONF_BATTERY_CHARGED_ENERGY = 'battery_charged_energy'
-CONF_BATTERY_DISCHARGED_ENERGY = 'battery_discharged_energy'
-CONF_BATTERY_LIFE = 'battery_life'
+CONF_CHARGING_POWER = 'charging_power'
+CONF_DISCHARGING_POWER = 'discharging_power'
+CONF_TIME_REMAINING = 'remaining_time'
 CONF_BATTERY_POWER = 'battery_power'
 CONF_AMP_HOUR_REMAIN = "amp_hour_remain"
-CONF_AMP_HOUR_USED = "amp_hour_used_total"
-CONF_AMP_HOUR_CHARGED = "amp_hour_charged_total"
+CONF_ENERGY_DISCHARGED = "energy_discharged"
+CONF_ENERGY_CHARGED = "energy_charged"
 CONF_OUTPUT_STATUS = "output_status"
 CONF_POWER = "power"
+CONF_BATTERY_CAPACITY = "battery_capacity"
 
 TYPES = [
     CONF_VOLTAGE,
@@ -70,15 +71,15 @@ TYPES = [
     CONF_TEMPERATURE,
     CONF_DIRECTION,
     CONF_BATTERY_POWER,
-    CONF_BATTERY_LIFE,
-    CONF_BATTERY_CHARGED_ENERGY,
-    CONF_BATTERY_DISCHARGED_ENERGY,
+    CONF_TIME_REMAINING,
+    CONF_CHARGING_POWER,
+    CONF_DISCHARGING_POWER,
     CONF_AMP_HOUR_REMAIN,
-    CONF_AMP_HOUR_USED,
-    CONF_AMP_HOUR_CHARGED,
-    CONF_BATTERY_OHM,
+    CONF_ENERGY_DISCHARGED,
+    CONF_ENERGY_CHARGED,
     CONF_OUTPUT_STATUS,
-    CONF_POWER
+    CONF_POWER,
+    CONF_BATTERY_CAPACITY
 ]
 
 CONF_INVERT_CURRENT="invert_current"
@@ -115,14 +116,7 @@ CONFIG_SCHEMA = cv.All(
                 device_class=DEVICE_CLASS_BATTERY,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
-            cv.Optional(CONF_BATTERY_OHM): sensor.sensor_schema(
-                unit_of_measurement=UNIT_OHM,
-                icon="mdi:resistor",
-                accuracy_decimals=3,
-                device_class=DEVICE_CLASS_BATTERY,
-                state_class=STATE_CLASS_MEASUREMENT,
-            ),
-             cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
+            cv.Optional(CONF_TEMPERATURE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_CELSIUS,
                 icon=ICON_THERMOMETER,
                 accuracy_decimals=0,
@@ -143,21 +137,21 @@ CONFIG_SCHEMA = cv.All(
                 device_class=DEVICE_CLASS_POWER,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
-            cv.Optional(CONF_BATTERY_LIFE): sensor.sensor_schema(
+            cv.Optional(CONF_TIME_REMAINING): sensor.sensor_schema(
                 unit_of_measurement=UNIT_MINUTE,
                 icon=ICON_TIMER,
                 accuracy_decimals=0,
                 device_class=DEVICE_CLASS_DURATION,
                 state_class=STATE_CLASS_MEASUREMENT,
              ),
-            cv.Optional(CONF_BATTERY_CHARGED_ENERGY): sensor.sensor_schema(
+            cv.Optional(CONF_CHARGING_POWER): sensor.sensor_schema(
                 unit_of_measurement=UNIT_WATT,
                 icon="mdi:lightning-bolt",
                 accuracy_decimals=2,
                 device_class=DEVICE_CLASS_POWER,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
-            cv.Optional(CONF_BATTERY_DISCHARGED_ENERGY): sensor.sensor_schema(
+            cv.Optional(CONF_DISCHARGING_POWER): sensor.sensor_schema(
                 unit_of_measurement=UNIT_WATT,
                 icon="mdi:lightning-bolt",
                 accuracy_decimals=2,
@@ -172,18 +166,25 @@ CONFIG_SCHEMA = cv.All(
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
 
-            cv.Optional(CONF_AMP_HOUR_USED): sensor.sensor_schema(
-                unit_of_measurement=UNIT_AMPER_HOURS,
+            cv.Optional(CONF_ENERGY_DISCHARGED): sensor.sensor_schema(
+                unit_of_measurement=UNIT_KILOWATT_HOURS,
                 icon=ICON_BATTERY,
                 accuracy_decimals=1,
-                device_class=DEVICE_CLASS_BATTERY,
-                state_class=STATE_CLASS_MEASUREMENT,
+                device_class=DEVICE_CLASS_ENERGY,
+                state_class=STATE_CLASS_TOTAL_INCREASING,
             ),
-            cv.Optional(CONF_AMP_HOUR_CHARGED): sensor.sensor_schema(
+            cv.Optional(CONF_ENERGY_CHARGED): sensor.sensor_schema(
+                unit_of_measurement=UNIT_KILOWATT_HOURS,
+                icon=ICON_BATTERY,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_ENERGY,
+                state_class=STATE_CLASS_TOTAL_INCREASING,
+            ),
+            cv.Optional(CONF_BATTERY_CAPACITY): sensor.sensor_schema(
                 unit_of_measurement=UNIT_AMPER_HOURS,
                 icon=ICON_BATTERY,
                 accuracy_decimals=1,
-                device_class=DEVICE_CLASS_BATTERY,
+                device_class=DEVICE_CLASS_ENERGY_STORAGE,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
 
