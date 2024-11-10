@@ -46,9 +46,10 @@ from esphome.const import (
     DEVICE_CLASS_BATTERY_CHARGING,
     DEVICE_CLASS_ENERGY_STORAGE,
 )
+from . import CONF_JUNCTEK_ID, JuncTekKHF
 
 UNIT_AMPER_HOURS = 'Ah'
-DEPENDENCIES = ["uart"]
+DEPENDENCIES = ["junctek_khf"]
 AUTO_LOAD = ["sensor"]
 
 # sensors
@@ -60,11 +61,10 @@ CONF_BATTERY_POWER = 'battery_power'
 CONF_AMP_HOUR_REMAIN = "amp_hour_remain"
 CONF_ENERGY_DISCHARGED = "energy_discharged"
 CONF_ENERGY_CHARGED = "energy_charged"
-CONF_OUTPUT_STATUS = "output_status"
 CONF_POWER = "power"
 CONF_BATTERY_CAPACITY = "battery_capacity"
 
-TYPES = [
+SENSORS = [
     CONF_VOLTAGE,
     CONF_CURRENT,
     CONF_BATTERY_LEVEL,
@@ -77,24 +77,13 @@ TYPES = [
     CONF_AMP_HOUR_REMAIN,
     CONF_ENERGY_DISCHARGED,
     CONF_ENERGY_CHARGED,
-    CONF_OUTPUT_STATUS,
     CONF_POWER,
     CONF_BATTERY_CAPACITY
 ]
 
-CONF_INVERT_CURRENT="invert_current"
-CONF_UPDATE_SETTINGS_INTERVAL="update_settings_interval"
-CONF_UPDATE_STATS_INTERVAL="update_stats_interval"
-
-JuncTekKGF = cg.global_ns.class_(
-    "JuncTekKGF", cg.Component, uart.UARTDevice
-)
-
-CONFIG_SCHEMA = cv.All(
-    cv.Schema(
+CONFIG_SCHEMA = cv.Schema(
         {
-            cv.GenerateID(): cv.declare_id(JuncTekKGF),
-            cv.Optional(CONF_ADDRESS, default=1): cv.int_range(1, 255),
+            cv.GenerateID(CONF_JUNCTEK_ID): cv.use_id(JuncTekKHF),
             cv.Optional(CONF_VOLTAGE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_VOLT,
                 icon=ICON_FLASH,
@@ -125,10 +114,6 @@ CONFIG_SCHEMA = cv.All(
             ),
             cv.Optional(CONF_DIRECTION): sensor.sensor_schema(
                 accuracy_decimals=0,
-            ),
-            cv.Optional(CONF_OUTPUT_STATUS): sensor.sensor_schema(
-                accuracy_decimals=0,
-                icon="mdi:list-status"
             ),
             cv.Optional(CONF_POWER): sensor.sensor_schema(
                 unit_of_measurement=UNIT_WATT,
@@ -188,27 +173,14 @@ CONFIG_SCHEMA = cv.All(
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
 
-            cv.Optional(CONF_INVERT_CURRENT, default=False): cv.boolean,
-            cv.Optional(CONF_UPDATE_SETTINGS_INTERVAL, default=30000): cv.int_,
-            cv.Optional(CONF_UPDATE_STATS_INTERVAL, default=1000): cv.int_,
             cv.Optional(CONF_CURRENT_DIRECTION, default=True): cv.boolean,
         }
-    ).extend(uart.UART_DEVICE_SCHEMA)
     )
 
-async def setup_conf(config, key, hub):
-    if key in config:
-        conf = config[key]
-        sens = await sensor.new_sensor(conf)
-        cg.add(getattr(hub, f"set_{key}_sensor")(sens))
-
-
 async def to_code(config):
-    var = cg.new_Pvariable(config[CONF_ID], config[CONF_ADDRESS], config[CONF_INVERT_CURRENT])
-    await cg.register_component(var, config)
-    await uart.register_uart_device(var, config)
-    for key in TYPES:
-        await setup_conf(config, key, var)
-
-    cg.add(var.set_update_settings_interval(config[CONF_UPDATE_SETTINGS_INTERVAL]))
-    cg.add(var.set_update_stats_interval(config[CONF_UPDATE_STATS_INTERVAL]))
+    hub = await cg.get_variable(config[CONF_JUNCTEK_ID])
+    for key in SENSORS:
+        if key in config:
+            conf = config[key]
+            sens = await sensor.new_sensor(conf)
+            cg.add(getattr(hub, f"set_{key}_sensor")(sens))

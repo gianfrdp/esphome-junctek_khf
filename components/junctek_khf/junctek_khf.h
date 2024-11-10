@@ -2,16 +2,19 @@
 
 #include "esphome/core/component.h"
 #include "esphome/components/sensor/sensor.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/uart/uart.h"
 
-using namespace esphome;
+namespace esphome {
 
-class JuncTekKGF
+namespace junctek_khf {
+
+class JuncTekKHF
   : public esphome::Component
   , public uart::UARTDevice
 {
 public:
-  JuncTekKGF(unsigned address = 1, bool invert_current=false);
+  JuncTekKHF(unsigned address = 1, bool invert_current=false);
 
   void set_voltage_sensor(sensor::Sensor *voltage_sensor) { voltage_sensor_ = voltage_sensor; }
   void set_current_sensor(sensor::Sensor *current_sensor) { current_sensor_ = current_sensor; }
@@ -26,7 +29,7 @@ public:
   void set_energy_charged_sensor(sensor::Sensor *energy_charged_sensor) { energy_charged_sensor_ = energy_charged_sensor; }
   void set_charging_power_sensor(sensor::Sensor *charging_power_sensor) { charging_power_sensor_ = charging_power_sensor; }
   void set_discharging_power_sensor(sensor::Sensor *discharging_power_sensor) { discharging_power_sensor_ = discharging_power_sensor; }
-  void set_output_status_sensor(sensor::Sensor *output_status_sensor) { output_status_sensor_ = output_status_sensor; }
+  void set_output_status_text_sensor(text_sensor::TextSensor *output_status_text_sensor) { output_status_text_sensor_ = output_status_text_sensor; }
   void set_power_sensor(sensor::Sensor *power_sensor) { power_sensor_ = power_sensor; }
   void set_remaining_time_sensor(sensor::Sensor *remaining_time_sensor) { remaining_time_sensor_ = remaining_time_sensor; }
   void set_runtime_sensor(sensor::Sensor *runtime_sensor) { runtime_sensor_ = runtime_sensor; }
@@ -62,7 +65,7 @@ protected:
   sensor::Sensor* charging_power_sensor_{nullptr};
   sensor::Sensor* discharging_power_sensor_{nullptr};
 
-  sensor::Sensor* output_status_sensor_{nullptr};
+  text_sensor::TextSensor* output_status_text_sensor_{nullptr};
   sensor::Sensor* power_sensor_{nullptr};
   sensor::Sensor* runtime_sensor_{nullptr};
   sensor::Sensor* remaining_time_sensor_{nullptr};
@@ -77,3 +80,6 @@ protected:
   optional<unsigned long> last_stats_;
   bool invert_current_;
 };
+
+}  // namespace junctek_khf
+}  // namespace esphome

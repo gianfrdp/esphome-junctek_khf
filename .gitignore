@@ -2,3 +2,4 @@
 /*.yaml
 .idea/
 components/junctek_kgf/__pycache__/
+.vscode/

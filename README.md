@@ -44,8 +44,12 @@ esphome:
   comment: ${device_description}
 
 external_components:
-  - source: github://gianfrdp/esphome-junctek_khf@junctek_khf
-    components: [ junctek_kgf ]
+  #- source: github://gianfrdp/esphome-junctek_khf@junctek_khf
+  - source:
+      type: git
+      url: https://github.com/gianfrdp/esphome-junctek_khf
+      ref: junctek_khf
+    components: [ junctek_khf ]
 
 esp32:
   board: esp32dev
@@ -58,12 +62,17 @@ uart:
   id: uart_junctek
   baud_rate: 115200
 
+junctek_khf:
+  id: junctek_id
+  address: 1
+  invert_current: false
+  update_stats_interval: 5000 # 5 seconds
+  update_settings_interval: 30000 # 30 seconds
+  uart_id: uart_junctek
+
 sensor:
   - platform: junctek_kgf
-    address: 1
-    uart_id: uart_junctek
-    invert_current: false
-    update_stats_interval: 5000 # 5 seconds
+    junctek_id: junctek_id
     voltage:
       name: "${name} Voltage"
       id: ${device_id}_voltage
@@ -91,9 +100,6 @@ sensor:
     temperature:
       name: "${name} Temperature"
       id: ${device_id}_temperature
-    output_status:
-      name: "${name} Output Status"
-      id: ${device_id}_output_status
     remaining_time:
       name: "${name} Remaining Time"
       id: ${device_id}_remaining_time
@@ -103,6 +109,14 @@ sensor:
     discharging_power:
       name: "${name} Discharging Power"   
       id: ${device_id}_discharging_power
+
+text_sensor:
+  - platform: junctek_khf
+    junctek_id: junctek_id
+    output_status:
+      name: "${name} Output Status"
+      id: ${device_id}_output_status
+
 ```
 
 Not all sensors need to be added.
