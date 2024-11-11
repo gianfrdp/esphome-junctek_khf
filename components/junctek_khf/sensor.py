@@ -184,14 +184,14 @@ CONFIG_SCHEMA = cv.Schema(
             cv.Optional(CONF_ENERGY_DISCHARGED): sensor.sensor_schema(
                 unit_of_measurement=UNIT_KILOWATT_HOURS,
                 icon=ICON_BATTERY,
-                accuracy_decimals=1,
+                accuracy_decimals=3,
                 device_class=DEVICE_CLASS_ENERGY,
                 state_class=STATE_CLASS_TOTAL_INCREASING,
             ),
             cv.Optional(CONF_ENERGY_CHARGED): sensor.sensor_schema(
                 unit_of_measurement=UNIT_KILOWATT_HOURS,
                 icon=ICON_BATTERY,
-                accuracy_decimals=1,
+                accuracy_decimals=3,
                 device_class=DEVICE_CLASS_ENERGY,
                 state_class=STATE_CLASS_TOTAL_INCREASING,
             ),

@@ -71,7 +71,7 @@ junctek_khf:
   uart_id: uart_junctek
 
 sensor:
-  - platform: junctek_kgf
+  - platform: junctek_khf
     junctek_id: junctek_id
 
     voltage:
