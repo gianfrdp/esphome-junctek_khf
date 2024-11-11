@@ -1,5 +1,5 @@
 /.esphome/
 /*.yaml
 .idea/
-components/junctek_kgf/__pycache__/
+components/junctek_khf/__pycache__/
 .vscode/

@@ -73,6 +73,7 @@ junctek_khf:
 sensor:
   - platform: junctek_kgf
     junctek_id: junctek_id
+
     voltage:
       name: "${name} Voltage"
       id: ${device_id}_voltage
@@ -88,9 +89,6 @@ sensor:
     amp_hour_remain:
       name: "${name} Remaining Capacity"
       id: ${device_id}_remaining_capacity
-    battery_capacity:
-      name: "${name} Total Capacity"
-      id: ${device_id}_battery_capacity
     energy_charged:
       name: "${name} Charging Energy"
       id: ${device_id}_charging_energy
@@ -110,12 +108,85 @@ sensor:
       name: "${name} Discharging Power"   
       id: ${device_id}_discharging_power
 
+    # Setting sensors
+    battery_capacity:
+      name: "${name} Total Capacity"
+      id: ${device_id}_battery_capacity
+
+    over_voltage_protection:
+      name: "${name} OVP"
+      id: ${device_id}_over_voltage_protection
+    under_voltage_protection:
+      name: "${name} UVP"
+      id: ${device_id}_under_voltage_protection
+    over_discharge_current_protection:
+      name: "${name} ODCP"
+      id: ${device_id}_over_discharge_current_protection
+    over_charge_current_protection:
+      name: "${name} OCCP"
+      id: ${device_id}_over_charge_current_protection
+    over_power_protection:
+      name: "${name} OPP"
+      id: ${device_id}_over_power_protection
+    over_temperature_protection:
+      name: "${name} OTP"
+      id: ${device_id}_over_temperature_protection
+    under_temperature_protection:
+      name: "${name} UTP"
+      id: ${device_id}_under_temperature_protection
+    protection_recovery_time:
+      name: "${name} Protection Recovery Time"
+      id: ${device_id}_protection_recovery_time
+    protection_delay_time:
+      name: "${name} Protection Delay Time"
+      id: ${device_id}_protection_delay_time
+    full_battery_voltage:
+      name: "${name} Full battery Voltage"
+      id: ${device_id}_full_battery_voltage
+    full_charge_current:
+      name: "${name} Full charge Current"
+      id: ${device_id}_full_charge_current
+    low_battery_voltage:
+      name: "${name} Low battery Voltage"
+      id: ${device_id}_low_battery_voltage
+    monitoring_time:
+      name: "${name} Monitoring Time"
+      id: ${device_id}_monitoring_time
+    bt_password:
+      name: "${name} Bluetooth Password"
+      id: ${device_id}_bt_password
+    data_logging_interval:
+      name: "${name} Data Logging Interval"
+      id: ${device_id}_data_logging_interval
+
 text_sensor:
   - platform: junctek_khf
     junctek_id: junctek_id
     output_status:
       name: "${name} Output Status"
       id: ${device_id}_output_status
+
+    temperature_uom:
+      name: "${name} Temperature Unit of Measure"
+      id: ${device_id}_temperature_uom
+
+binary_sensor:
+  - platform: junctek_khf
+    junctek_id: junctek_id
+
+    charging:
+      name: "${name} Charging"
+      id: ${device_id}_charging
+    discharging:
+      name: "${name} Discharging"
+      id: ${device_id}_discharging
+
+    relay_normally_open:
+      name: "${name} Relay NO"
+      id: ${device_id}_relay_normally_open
+    log_enabled:
+      name: "${name} Log Enabled"
+      id: ${device_id}_log_enabled
 
 ```
 

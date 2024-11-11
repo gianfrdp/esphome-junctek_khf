@@ -73,24 +73,106 @@ void JuncTekKHF::handle_settings(const char* buffer)
   if (! verify_checksum(checksum, cursor))
     return;
 
-  const float overVoltage = getval(cursor) / 100.0;
-  const float underVoltage = getval(cursor) / 100.0;
-  const float positiveOverCurrent = getval(cursor) / 1000.0;
-  const float negativeOverCurrent = getval(cursor) / 100.00;
-  const float overPowerProtection = getval(cursor) / 100.00;
-  const float overTemperature = getval(cursor) - 100.0;
-  const int protectionRecoverySeconds = getval(cursor);
-  const int delayTime = getval(cursor);
-  const float batteryAmpHourCapacity = getval(cursor) / 10.0;
-  const int voltageCalibration = getval(cursor);
-  const int currentCalibration = getval(cursor);
-  const float temperatureCalibration = getval(cursor) - 100.0;
-  const int reserved = getval(cursor);
-  const int relayNormallyOpen = getval(cursor);
-  const int currentratio = getval(cursor);
+  // :r51=1,227,0,0,0,0,0,255,0,30,2800,100,100,100,0,0,1,100,0,0,0,20,20,255,0,0,0,15
+  const float overVoltage = getval(cursor) / 100.0; // 2 -> 0
+  const float underVoltage = getval(cursor) / 100.0; // 3 -> 0
+  const float overDischargeCurrent = getval(cursor) / 100.0; // 4 -> 0
+  const float overChargeCurrent = getval(cursor) / 100.00; // 5 -> 0
+  const float overPowerProtection = getval(cursor) / 100.00; // 6 -> 0
+  const float overTemperature = getval(cursor) - 100.0; // 7  -> 255 = 155
+  const int   protectionRecoverySeconds = getval(cursor); // 8 -> 0
+  const int   delayTime = getval(cursor); // 9 -> 30
+  const float batteryAmpHourCapacity = getval(cursor) / 10.0; // 10 -> 2800 = 280
+  const int   voltageCalibration = getval(cursor) - 100; // 11 -> 100 = 0%
+  const int   currentCalibration = getval(cursor) - 100; // 12 -> 100 = 0%
+  const float temperatureCalibration = getval(cursor) - 100.0; // 13 -> 100 = 0%
+  const int   reserved = getval(cursor); // 14 -> 0
+  const int   relayNormallyOpen = getval(cursor); // 15 -> 0 = normally open
+  const int   currentratio = getval(cursor); // 16 -> 1 
+  const int   undefined1 = getval(cursor); // 17 -> 100
+  const int   log_enabled = getval(cursor); // 18 -> 0
+  const float full_battery_voltage = getval(cursor) / 100.0; // 19 -> 0
+  const float low_battery_voltage = getval(cursor) / 100.0; // 20 -> 0
+  const float full_charge_current = getval(cursor); // 21 -> 20 -> 20
+  const float monitoring_time = getval(cursor) / 10.0; // 22 -> 255 = 25.5
+  const float low_temperature = getval(cursor) - 100.0; // 23 -> 0
+  const int   temperature_uom = getval(cursor); // 24 -> 0 = C
+  const int   bt_password =  getval(cursor); // 25 -> 0
+  const int   data_logging_interval = getval(cursor); // 26 -> 15
 
+  if (over_voltage_protection_sensor_ && overVoltage > 0)
+    this->over_voltage_protection_sensor_->publish_state(overVoltage);
+
+  if (under_voltage_protection_sensor_ && underVoltage > 0)
+    this->under_voltage_protection_sensor_->publish_state(underVoltage);
+
+  if (over_discharge_current_protection_sensor_ && overDischargeCurrent > 0)
+    this->over_discharge_current_protection_sensor_->publish_state(overDischargeCurrent);
+
+  if (over_charge_current_protection_sensor_ && overChargeCurrent > 0)
+    this->over_charge_current_protection_sensor_->publish_state(overChargeCurrent);
+
+  if (over_power_protection_sensor_ && overPowerProtection > 0)
+    this->over_power_protection_sensor_->publish_state(overPowerProtection);
+
+  if (over_temperature_protection_sensor_ && overTemperature > 0)
+    this->over_temperature_protection_sensor_->publish_state(overTemperature);
+
+  if (under_temperature_protection_sensor_ && low_temperature > -100)
+    this->under_temperature_protection_sensor_->publish_state(low_temperature);
+
+  if (protection_recovery_time_sensor_ && protectionRecoverySeconds > 0)
+    this->protection_recovery_time_sensor_->publish_state(protectionRecoverySeconds); 
+
+  if (protection_delay_time_sensor_ && delayTime > 0)
+    this->protection_delay_time_sensor_->publish_state(delayTime); 
+  
   if (battery_capacity_sensor_)
     this->battery_capacity_sensor_->publish_state(batteryAmpHourCapacity);
+
+  if (voltage_calibration_sensor_)
+    this->voltage_calibration_sensor_->publish_state(voltageCalibration);
+
+  if (current_calibration_sensor_)
+    this->current_calibration_sensor_->publish_state(currentCalibration);
+
+  if (temperature_calibration_sensor_)
+    this->temperature_calibration_sensor_->publish_state(temperatureCalibration);
+
+  if (relay_normally_open_binary_sensor_)
+    this->relay_normally_open_binary_sensor_->publish_state(relayNormallyOpen == 0);
+
+  if (log_enabled_binary_sensor_)
+    this->log_enabled_binary_sensor_->publish_state(log_enabled == 0);
+  
+  if (full_battery_voltage_sensor_)
+    this->full_battery_voltage_sensor_->publish_state(full_battery_voltage);
+
+  if (low_battery_voltage_sensor_)
+    this->low_battery_voltage_sensor_->publish_state(low_battery_voltage);
+  
+  if (full_charge_current_sensor_)
+    this->full_charge_current_sensor_->publish_state(full_charge_current);
+
+  if (monitoring_time_sensor_)
+    this->monitoring_time_sensor_->publish_state(monitoring_time);
+
+  if (temperature_uom_text_sensor_) {
+    std::string uom = "";
+    if (temperature_uom == 0) {
+      uom = "C";
+    } else {
+      uom = "F";
+    }
+
+    this->temperature_uom_text_sensor_->publish_state(uom);
+  }
+
+  if (bt_password_sensor_)
+      this->bt_password_sensor_->publish_state(bt_password);
+
+  if (data_logging_interval_sensor_)
+      this->data_logging_interval_sensor_->publish_state(data_logging_interval);
 
   // Save the capacity for calculating the %
   this->battery_capacity_ = batteryAmpHourCapacity;
@@ -239,6 +321,12 @@ void JuncTekKHF::handle_status(const char* buffer)
 
   if (remaining_time_sensor_)
       this->remaining_time_sensor_->publish_state(batteryLifeMinutes);
+
+  if (charging_sensor_)
+    this->charging_sensor_->publish_state(is_charging);
+
+  if (discharging_sensor_)
+    this->discharging_sensor_->publish_state(!is_charging);
 
   this->last_stats_ = esphome::millis();
 }
