@@ -21,7 +21,7 @@ public:
   // R50 sensors
   void set_voltage_sensor(sensor::Sensor *voltage_sensor) { voltage_sensor_ = voltage_sensor; }
   void set_current_sensor(sensor::Sensor *current_sensor) { current_sensor_ = current_sensor; }
-  void set_temperature_sensor(sensor::Sensor *temperature) { temperature_ = temperature; }
+  void set_temperature_sensor(sensor::Sensor *temperature_sensor) { temperature_sensor_ = temperature_sensor; }
   void set_update_settings_interval(uint32_t interval) { update_settings_interval_ = interval; }
   void set_update_stats_interval(uint32_t interval) { update_stats_interval_ = interval; }
   void set_current_direction_sensor(sensor::Sensor *current_direction_sensor) { current_direction_sensor_ = current_direction_sensor; }
@@ -85,7 +85,7 @@ protected:
 
   sensor::Sensor* voltage_sensor_{nullptr};
   sensor::Sensor* current_sensor_{nullptr};
-  sensor::Sensor* temperature_{nullptr};
+  sensor::Sensor* temperature_sensor_{nullptr};
   sensor::Sensor* current_direction_sensor_{nullptr};
   sensor::Sensor* battery_ohm_sensor_{nullptr};
   sensor::Sensor* battery_level_sensor_{nullptr};
@@ -135,6 +135,8 @@ protected:
   optional<unsigned long> last_settings_;
   optional<unsigned long> last_stats_;
   bool invert_current_;
+  optional<float> last_charged_energy_ = 0;
+  optional<float> last_discharged_energy_ = 0;
 };
 
 }  // namespace junctek_khf

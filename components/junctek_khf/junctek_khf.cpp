@@ -3,6 +3,8 @@
 #include "esphome/core/optional.h"
 #include <string>
 #include <string.h>
+#include <iostream>
+#include <sstream>
 #include <setjmp.h>
 
 namespace esphome {
@@ -10,6 +12,36 @@ namespace junctek_khf {
 
 static jmp_buf parsing_failed;
 static const char *const TAG = "JunkTek KH-F";
+
+void splitString(const std::string& input, char delimiter,
+                 int arr[], int& index)
+{
+    // Creating an input string stream from the input string
+    std::istringstream stream(input);
+
+    // Temporary string to store each token
+    std::string token;
+    std::string::size_type sz;   // alias of size_t
+
+    // Read tokens from the string stream separated by the
+    // delimiter
+    while (getline(stream, token, delimiter)) {
+        // Add the token to the array
+        arr[index++] = std::stoi(token, &sz);
+    }
+}
+
+bool verify_checksum2(int checksum, int buffer[], const int tot_values)
+{
+  long total = 0;
+  for(int i = 0; i < tot_values; i++)
+  {
+    total += buffer[i];
+  }
+  const bool checksum_valid = (total % 255) + 1 == checksum;
+  ESP_LOGD(TAG, "Recv checksum %d total %ld valid %d", checksum, total, checksum_valid);
+  return checksum_valid;
+}
 
 esphome::optional<int> try_getval(const char*& cursor)
 {
@@ -23,10 +55,10 @@ esphome::optional<int> try_getval(const char*& cursor)
   }
   if (*end != ',' && *end != '.')
   {
-    ESP_LOGE(TAG, "Error no coma %s", cursor);
+    ESP_LOGE(TAG, "Error no comma %s", cursor);
     return nullopt;
   }
-  cursor = end + 1; // Skip coma
+  cursor = end + 1; // Skip comma
   return val;
 }
 
@@ -40,14 +72,13 @@ int getval(const char*& cursor)
   }
   return *val;
 }
-  
 
 JuncTekKHF::JuncTekKHF(unsigned address, bool invert_current)
   : address_(address)
   , invert_current_(invert_current)
 {
 
-  
+
 }
 
 void JuncTekKHF::dump_config()
@@ -88,7 +119,7 @@ void JuncTekKHF::handle_settings(const char* buffer)
   const float temperatureCalibration = getval(cursor) - 100.0; // 13 -> 100 = 0%
   const int   reserved = getval(cursor); // 14 -> 0
   const int   relayNormallyOpen = getval(cursor); // 15 -> 0 = normally open
-  const int   currentratio = getval(cursor); // 16 -> 1 
+  const int   currentratio = getval(cursor); // 16 -> 1
   const int   undefined1 = getval(cursor); // 17 -> 100
   const int   log_enabled = getval(cursor); // 18 -> 0
   const float full_battery_voltage = getval(cursor) / 100.0; // 19 -> 0
@@ -115,8 +146,9 @@ void JuncTekKHF::handle_settings(const char* buffer)
   if (over_power_protection_sensor_ && overPowerProtection > 0)
     this->over_power_protection_sensor_->publish_state(overPowerProtection);
 
-  if (over_temperature_protection_sensor_ && overTemperature > 0)
+  if (over_temperature_protection_sensor_ && overTemperature > 0) {
     this->over_temperature_protection_sensor_->publish_state(overTemperature);
+  }
 
   if (under_temperature_protection_sensor_ && low_temperature > -100)
     this->under_temperature_protection_sensor_->publish_state(low_temperature);
@@ -185,6 +217,7 @@ void JuncTekKHF::handle_status(const char* buffer)
   ESP_LOGV(TAG, "Status %s", buffer);
   const char* cursor = buffer;
   const int address = getval(cursor); //0
+  
   if (address != this->address_)
     return;
  
@@ -221,8 +254,10 @@ void JuncTekKHF::handle_status(const char* buffer)
   if (voltage_sensor_)
     this->voltage_sensor_->publish_state(voltage);
 
+  ESP_LOGD(TAG, "battery_level = %.2f, battery_capacity = %.2f", battery_level_sensor_->get_raw_state(), this->battery_capacity_.value());
   if (battery_level_sensor_ && this->battery_capacity_)
   {
+
     float battLvl = ampHourRemaining * 100.0 / * this->battery_capacity_;
 
     //prevent from publishing crazy numbers.
@@ -243,11 +278,23 @@ void JuncTekKHF::handle_status(const char* buffer)
   if (amp_hour_remain_sensor_)
     this->amp_hour_remain_sensor_->publish_state(ampHourRemaining);
 
-  if (energy_discharged_sensor_)
-  this->energy_discharged_sensor_->publish_state(discharging_energy);
+  if (energy_discharged_sensor_) {
+    if (last_discharged_energy_ <= discharging_energy) {
+      this->energy_discharged_sensor_->publish_state(discharging_energy);
+      last_discharged_energy_ = discharging_energy;
+    } else {
+      ESP_LOGE(TAG, "Discharging energy %.2f < previous one %.2f, ignoring", discharging_energy, last_discharged_energy_.value());
+    }
+  }
 
-  if (energy_charged_sensor_)
-  this->energy_charged_sensor_->publish_state(charging_energy);
+  if (energy_charged_sensor_) {
+    if (last_charged_energy_ <= charging_energy) {
+      this->energy_charged_sensor_->publish_state(charging_energy);
+      last_charged_energy_ = charging_energy;
+    } else {
+      ESP_LOGE(TAG, "Charging energy %.2f < previous one %.2f, ignoring", charging_energy, last_charged_energy_.value());
+    }
+  }
 
   if (output_status_text_sensor_) {
     std::string output_status = "";
@@ -281,8 +328,8 @@ void JuncTekKHF::handle_status(const char* buffer)
     this->output_status_text_sensor_->publish_state(output_status);
   }
 
-  if (temperature_)
-    this->temperature_->publish_state(temperature);
+  if (temperature_sensor_)
+    this->temperature_sensor_->publish_state(temperature);
 
   if (power_sensor_) {
     float adjustedCurrent = is_charging ? amps : -amps;
@@ -365,6 +412,7 @@ bool JuncTekKHF::readline()
           break;
         case '\n': // Return on line feed
           this->line_pos_ = 0;  // Reset position index ready for next time
+          //ESP_LOGD(TAG, "buffer: %s", &this->line_buffer_[0]);
           return true;
         default:
           if (this->line_pos_ < MAX_LINE_LEN - 1)

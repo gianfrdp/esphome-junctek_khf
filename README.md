@@ -16,6 +16,7 @@ Connects to the Junctek KGF series battery monitor via UART (RS-485 *adapter NOT
 * Battery Discharging Power
 * Battery time remaining
 * Output Status
+* and all settings values
 
 ## Requirements
 * ESPHome
